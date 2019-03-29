@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+
+# ``prep-target`` handles the preparations for installing and configuring
+# the "target" configuration of DevStack.
+
+
+# Keep track of the devstack directory
+GRENADE_DIR=$(cd $(dirname "$0") && pwd)
+
+# Source params
+source $GRENADE_DIR/grenaderc
+
+# Import common functions
+source $GRENADE_DIR/functions
+
+# Determine what system we are running on.  This provides ``os_VENDOR``,
+# ``os_RELEASE``, ``os_UPDATE``, ``os_PACKAGE``, ``os_CODENAME``
+# and ``DISTRO``
+GetDistro
+
+# For debugging
+set -o xtrace
+
+# System Preparation
+# ==================
+
+# Load up a copy of the downloaded images if not present
+if [[ -d $BASE_RELEASE_DIR/images ]]; then
+    rsync -a $BASE_RELEASE_DIR/images $TARGET_DEVSTACK_DIR/files
+fi
+
+# Get target config (stackrc grabs devstack "functions" too)
+source $TARGET_DEVSTACK_DIR/stackrc
+
+# Build a wheel cache
+if [[ -n ${WHEELHOUSE:-} && ! -d ${WHEELHOUSE:-} ]]; then
+    WHEELHOUSE=$WHEELHOUSE source $TARGET_DEVSTACK_DIR/tools/build_wheels.sh
+fi
+
+# Find additional Python packages for venvs
+install_database_python
+
+# Set up Screen
+# =============
+
+# Set a reasonable screen statusbar
+SCREEN_HARDSTATUS=${SCREEN_HARDSTATUS:-'%{= .} %-Lw%{= .}%> %n%f %t*%{= .}%+Lw%< %-=%{g}(%{d}%H/%l%{g})'}
+screen -r $SCREEN_NAME -X hardstatus alwayslastline "$SCREEN_HARDSTATUS"
+
+# Set up needed directories
+# =========================
+#
+# This ensures that we have a clean service status directory so that
+# we know for sure if services are coming up / down when we expect
+# them.
+init_service_check
+
+
+# Set up Logging
+# ==============
+
+# Set up logging for ``stack.sh``
+# Set ``LOGFILE`` to turn on logging
+# Append '.xxxxxxxx' to the given name to maintain history
+# where 'xxxxxxxx' is a representation of the date the file was created
+TIMESTAMP_FORMAT=${TIMESTAMP_FORMAT:-"%F-%H%M%S"}
+if [[ -n "$LOGFILE" || -n "$SCREEN_LOGDIR" ]]; then
+    LOGDAYS=${LOGDAYS:-7}
+    CURRENT_LOG_TIME=$(date "+$TIMESTAMP_FORMAT")
+fi
+
+if [[ -n "$LOGFILE" ]]; then
+    # First clean up old log files.  Use the user-specified ``LOGFILE``
+    # as the template to search for, appending '.*' to match the date
+    # we added on earlier runs.
+    LOGDIR=$(dirname "$LOGFILE")
+    LOGNAME=$(basename "$LOGFILE")
+    mkdir -p $LOGDIR
+    find $LOGDIR -maxdepth 1 -name $LOGNAME.\* -mtime +$LOGDAYS -exec rm {} \;
+    LOGFILE=$LOGFILE.${CURRENT_LOG_TIME}
+    SUMFILE=$LOGFILE.${CURRENT_LOG_TIME}.summary
+fi
+
+if [[ -n "$SCREEN_LOGDIR" ]]; then
+    mkdir -p $SCREEN_LOGDIR
+fi
+
+
+# Retain credentials
+# ==================
+
+# Preserve accrc files for future usage
+cp -a $BASE_DEVSTACK_DIR/accrc $TARGET_DEVSTACK_DIR/accrc
+
+
+# Install package requirements from new devstack
+# ==============================================
+echo_summary "Installing package prerequisites"
+FILES=$TARGET_DEVSTACK_DIR/files
+source $TARGET_DEVSTACK_DIR/tools/install_prereqs.sh
+
+
+# Set up requirements
+# ===================
+
+# Pull down the new global requirements repository
+#
+# this also pulls in new pbr which is needed because older
+# releases of various libraries trigger downgrades which then
+# would break, and pbr as a setup_requires can't be sanely
+# minimum-versioned.
+source $TARGET_DEVSTACK_DIR/lib/infra
+git_clone $REQUIREMENTS_REPO $REQUIREMENTS_DIR $REQUIREMENTS_BRANCH
+
+install_infra
+
+# force any oslo upgrades that might be required
+source $TARGET_DEVSTACK_DIR/lib/oslo
+install_oslo
+
+# Start helper services
+# =====================
+
+# Start dstat if it's in the ENABLED_SERVICES list. We really want
+# this running before any services start to see what's going on when
+# they start up, especially if there are failures.
+source $TARGET_DEVSTACK_DIR/lib/dstat
+
+start_dstat

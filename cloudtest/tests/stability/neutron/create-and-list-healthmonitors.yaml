@@ -1,0 +1,20 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "5" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  NeutronLoadbalancerV1.create_and_list_healthmonitors:
+    -
+      args:
+        healthmonitor_create_args: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        quotas:
+          neutron:
+            health_monitor: -1

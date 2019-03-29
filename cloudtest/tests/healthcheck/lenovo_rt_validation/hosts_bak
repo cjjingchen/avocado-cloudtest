@@ -1,0 +1,14 @@
+10.100.1.1    alhost
+127.0.1.1	simth-ThinkCentre-XXXX
+
+# The following lines are desirable for IPv6 capable hosts
+#10.100.211.144	public.fuel.local
+10.100.1.1    al
+#10.100.219.67	public.fuel.local
+172.16.77.129	controller1
+10.100.1.1    ack
+10.100.1.1    alnet
+10.100.1.1    astprefix
+10.100.1.1    allnodes
+10.100.1.1    allrouters
+10.100.219.15    public.fuel.local

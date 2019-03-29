@@ -1,0 +1,32 @@
+include subtests.cfg
+
+variants:
+    - @all:
+       #only nfv_test.vm_max_concurrent_ops.vms_concurrent_operations.creation nfv_test.vm_max_concurrent_ops.vms_concurrent_operations.suspend_and_resume nfv_test.vm_max_concurrent_ops.vms_concurrent_operations.delete
+        ct_type = nfv_test
+        only nfv_test
+        only nfv_test.vm_lifecycle.create_max_specification_vm  nfv_test.vm_lifecycle.create_delete_vm  nfv_test.vm_lifecycle.stop_start_vm  nfv_test.vm_lifecycle.create_reboot_vm  nfv_test.vm_snapshot.snapshot_restore  nfv_test.cpu_pinning.cpu_policy  nfv_test.cpu_pinning.isolated   nfv_test.vm_concurrent_ops.create_vms_on_single_node  nfv_test.vm_concurrent_ops.create_vms_on_multi_node  nfv_test.vm_concurrent_ops.max_concurrent_operations.creation  nfv_test.vm_concurrent_ops.max_concurrent_operations.soft_reboot  nfv_test.vm_concurrent_ops.max_concurrent_operations.suspend_and_resume  nfv_test.vm_concurrent_ops.max_concurrent_operations.pause_and_unpause  nfv_test.vm_concurrent_ops.max_concurrent_operations.stop_and_start  nfv_test.vm_concurrent_ops.max_concurrent_operations.delete  nfv_test.vm_concurrent_ops.vms_repeated_operation  nfv_test.migrate.live_migrate  nfv_test.migrate.cold_migrate  nfv_test.vm_crash_recovery  nfv_test.numa_pinning  nfv_test.check_vm_info  nfv_test.network_mgmt.vNIC_create_query  nfv_test.network_mgmt.subnet_create  nfv_test.network_mgmt.subnet_modify_delete.name  nfv_test.network_mgmt.subnet_modify_delete.allocation_pool 
+        #nfv_test.vm_affinity.affinity.host  nfv_test.vm_affinity.anti-affinity.host 
+        #no perf_loss_between_vm_and_baremetal controller_service_fault compute_node_HA disk_performance create_vm_with_passthrough_nic nic_bonding_test
+        #no live_migrate_with_dpdk dpdk_compatibility no vms_repeated_opration vm_failure_detection_recovery vms_repeated_operation vms_max_concurrent_number
+        #no services_HA volume vms_in_same_host_with_floating_ips
+        vm_creation_operation:
+            no qcow2_image
+        vm_concurrent_ops:
+	    test_vm_responsive_cmd = whoami
+            vm_max_count = 150
+            flavor_name = 4-4096-40
+	create_vms_on_multi_node:
+	    test_vm_responsive_cmd = whoami
+            flavor_name = 4-4096-40
+            vm_max_count = 150
+            #need_delete_vms = no
+            #delete_vm_on_error = no
+            #delete_resource_on_error = no
+        create_vms_on_single_node:
+            test_vm_responsive_cmd = whoami
+        image_name = centos
+        mtu = 1400
+        image_ssh_username = centos
+        image_ssh_auth_method = key
+        delete_resource_on_error = no

@@ -1,0 +1,14 @@
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  Watcher.create_audit_template_and_delete:
+    -
+      args:
+        goal:
+          name: "dummy"
+        strategy:
+          name: "dummy"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

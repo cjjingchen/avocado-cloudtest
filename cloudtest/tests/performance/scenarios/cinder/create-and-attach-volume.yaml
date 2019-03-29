@@ -1,0 +1,27 @@
+{% set size = size or 1 %}
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "5" %}
+{% set image_name = image_name or "^cirros.*uec$" %}
+{% set flavor_name = flavor_name or "m1.tiny" %}
+{% set availability_zone = availability_zone or "nova" %}
+---
+  CinderVolumes.create_and_attach_volume:
+    -
+      args:
+          size: {{size}}
+          image:
+            name: "{{image_name}}"
+          flavor:
+            name: "{{flavor_name}}"
+          create_volume_params:
+            availability_zone: "{{availability_zone}}"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

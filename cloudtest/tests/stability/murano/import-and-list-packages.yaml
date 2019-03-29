@@ -1,0 +1,17 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "5" %}
+---
+  MuranoPackages.import_and_list_packages:
+    -
+      args:
+        package: "rally-jobs/extra/murano/applications/HelloReporter/io.murano.apps.HelloReporter/"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

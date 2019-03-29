@@ -1,0 +1,387 @@
+#!/usr/bin/python
+
+import os
+import sys
+import argparse
+import yaml
+import time
+import socket
+import multiprocessing
+import StringIO
+
+from avocado.utils import process
+from cloudtest.lenovo_staf import LenovoSTAF
+from cloudtest.remote import RemoteRunner
+
+
+copy_file_method = 'scp'
+dispatch_test_method = 'ssh'
+MODE_SERIAL = "serial"
+MODE_PARALLEL = "parallel"
+TEST_PLAN_MODE_AUTO = "auto"
+TEST_PLAN_MODE_DEFINED = "user_defined_cases"
+TEST_PLAN_MODE = [TEST_PLAN_MODE_AUTO, TEST_PLAN_MODE_DEFINED]
+COPY_COMMAND_NAME = "copy"
+RUN_COMMAND_NAME = "run"
+SETUP_COMMAND_NAME = "setup"
+TEST_CONFIG_FILE_DIR = "/usr/share/avocado-cloudtest/config/"
+DEFAULT_JOB_RESULTS_DIR = "/cloudtest_results/avocado-cloudtest"
+
+
+class StrategyDecoder():
+    def __init__(self, args):
+        self.args = self.parameter_parser(args)
+
+    def parameter_parser(self, args):
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description="process test strategy parameter")
+
+        sub_parser = parser.add_subparsers(dest="command_name", help="supported sub-commands")
+
+        parser_run = sub_parser.add_parser(RUN_COMMAND_NAME, help="run test strategy command")
+        parser_run.add_argument("-f", "--file", dest="file_path", required=True, help="path of the test strategy file")
+        parser_run.add_argument("-m", "--mode", dest="exe_mode", default="serial", choices=[MODE_SERIAL, MODE_PARALLEL],
+                                help="test plan execution mode")
+        parser_run.add_argument("--job-results-dir", dest="job_results_dir", help="directory to store test result")
+        parser_run.add_argument("--mail-to", dest="mail_to", help="email address which receive test result")
+        parser_run.add_argument("-s", "--stop", dest="is_stop_action", action="store_true", help="stop running tests")
+
+        parser_copy = sub_parser.add_parser(COPY_COMMAND_NAME, help="file/directory copy command")
+        parser_copy.add_argument("--to", dest="to_or_from", action="store_true",
+                                 help="is copy local file/directory to remote")
+        parser_copy.add_argument("--remote-ip", dest="remote_ip", help="ip address of the remote host")
+        parser_copy.add_argument("--is-source-directory", dest="is_source_directory", action="store_true",
+                                 help="is the source file path a directory")
+        parser_copy.add_argument("--source-file-path", dest="source_file_path",
+                                 help="path of the source file/directory")
+        parser_copy.add_argument("--is-dest-directory", dest="is_dest_directory", action="store_true",
+                                 help="is the destination file path a directory")
+        parser_copy.add_argument("--dest-file-path", dest="dest_file_path",
+                                 help="destination path which file/directory will copy to")
+        parser_copy.add_argument("--is-recurse", dest="is_recurse", action="store_true",
+                                 help="raise error when destination file/directory already exists")
+        parser_copy.add_argument("--error-on-exists", dest="error_on_exists", action="store_false",
+                                 help="raise error when destination file/directory already exists")
+
+        parse_setup = sub_parser.add_parser(SETUP_COMMAND_NAME, help="setup resource command")
+        setup_sub_parser = parse_setup.add_subparsers(dest="sub_setup_cmd", help="supported sub setup commands")
+        parser_setup_rally = setup_sub_parser.add_parser("rally", help="run test strategy command")
+        parser_setup_rally.add_argument("--remote-ip", dest="remote_ip", required=True,
+                                        help="ip address of the remote host")
+        parser_setup_rally.add_argument("--deployment-show", dest="deployment_show", action="store_true",
+                                        help="show deployment info")
+        parser_setup_rally.add_argument("--deployment-check", dest="deployment_check", action="store_true",
+                                        help="check deployment service status")
+        parser_setup_rally.add_argument("--deployment-destroy", dest="deployment_destroy", action="store_true",
+                                        help="is delete deployment")
+        parser_setup_rally.add_argument("--deployment-create", dest="deployment_create", action="store_true",
+                                        help="create new deployment")
+        parser_setup_rally.add_argument("--deployment-name", dest="deployment_name",
+                                        help="set deployment name when creating deployment")
+        parser_setup_rally.add_argument("--deployment-file", dest="deployment_file",
+                                        help="set deployment file name when creating deployment")
+        parser_setup_rally.add_argument("--deployment-uuid", dest="deployment_uuid",
+                                        help="deployment uuid")
+
+        print vars(parser.parse_args(args))
+        return vars(parser.parse_args(args))
+
+    def execute_setup_operations(self):
+        if self.args["sub_setup_cmd"] == "rally":
+            command = None
+            if self.args["deployment_show"]:
+                command = "rally deployment show --deployment %s" % self.args["deployment_uuid"]
+            elif self.args["deployment_check"]:
+                command = "rally deployment check --deployment %s" % self.args["deployment_uuid"]
+            elif self.args["deployment_destroy"]:
+                command = "rally deployment destroy --deployment %s" % self.args["deployment_uuid"]
+            elif self.args["deployment_create"]:
+                if self.args["deployment_name"] and self.args["deployment_file"]:
+                    command = "rally deployment create --name %s --filename %s" % (
+                        self.args["deployment_name"], self.args["deployment_file"])
+                else:
+                    print "when create deployment, need to set deployment name and file name"
+                    exit(1)
+            print "execute rally command: %s" % command
+            if command is not None:
+                staf = LenovoSTAF(self.args["remote_ip"])
+                staf.exe_staf_shell_command(command)
+                staf.close_staf_handle()
+            else:
+                print "command is empty, please check your command"
+
+    def decode_and_run_strategy(self):
+        try:
+            local_ip = socket.gethostbyname(socket.gethostname())
+        except Exception, e:
+            print "get localhost ip address failed:" + e.message
+            sys.exit(1)
+        if self.args["command_name"] == COPY_COMMAND_NAME:
+            if self.args["to_or_from"]:
+                staf = LenovoSTAF(local_ip)
+                staf.copy_file_to(self.args["source_file_path"], self.args["remote_ip"], self.args["dest_file_path"],
+                                  is_source_loc_dir=self.args["is_source_directory"],
+                                  is_recurse=self.args["is_recurse"],
+                                  is_dest_loc_dir=self.args["is_dest_directory"],
+                                  err_on_exists=self.args["error_on_exists"])
+                staf.close_staf_handle()
+            else:
+                staf = LenovoSTAF(local_ip)
+                staf.copy_file_from(self.args["remote_ip"], self.args["source_file_path"], self.args["dest_file_path"],
+                                    is_source_loc_dir=self.args["is_source_directory"],
+                                    is_recurse=self.args["is_recurse"],
+                                    is_dest_loc_dir=self.args["is_dest_directory"],
+                                    err_on_exists=self.args["error_on_exists"])
+                staf.close_staf_handle()
+            return
+        elif self.args["command_name"] == SETUP_COMMAND_NAME:
+            self.execute_setup_operations()
+            return
+        yaml_file = self.args["file_path"]
+        if not os.path.exists(yaml_file):
+            print "yaml file(%s) do not exist" % yaml_file
+            sys.exit(1)
+        if not os.path.isfile(yaml_file):
+            print "yaml file path(%s) is not a file" % yaml_file
+            sys.exit(1)
+        try:
+            content = yaml.load(file(yaml_file, "r"))
+        except yaml.YAMLError, yaml_err:
+            print "load yaml file failed: %s" % yaml_err.message
+            raise
+        tests_list = content["tests"]
+        print content
+        test_plans = []
+        for test_item in tests_list:
+            host_ip = None
+            plan_name = None
+            plan_timeout = None
+            plan_uuid = None
+            plan_location = None
+            plan_mode = None
+            cfg_path = None
+            product_build_number = None
+            extra_params = None
+            for test_plan_item in test_item["test_plan"]:
+                if "hosts" in test_plan_item.keys():
+                    host_ip = test_plan_item["hosts"]
+                elif "plan_name" in test_plan_item.keys():
+                    plan_name = test_plan_item["plan_name"]
+                elif "plan_timeout" in test_plan_item.keys():
+                    plan_timeout = test_plan_item["plan_timeout"]
+                elif "uuid" in test_plan_item.keys():
+                    plan_uuid = test_plan_item["uuid"]
+                    if plan_uuid is None:
+                        print "no test plan uuid defined, please check yaml file"
+                        sys.exit(1)
+                elif "plan_mode" in test_plan_item.keys():
+                    plan_mode = test_plan_item["plan_mode"]
+                    if plan_mode not in TEST_PLAN_MODE:
+                        print "test plan mode error, please check yaml file"
+                        sys.exit(1)
+                elif "plan_location" in test_plan_item.keys():
+                    plan_location = test_plan_item["plan_location"]
+                elif "cfg_path" in test_plan_item.keys():
+                    cfg_paths = test_plan_item["cfg_path"]
+                elif "product_build_number" in test_plan_item.keys():
+                    product_build_number = test_plan_item["product_build_number"]
+                elif "avocado_cmd_params" in test_plan_item.keys():
+                    extra_params = test_plan_item["avocado_cmd_params"]
+                else:
+                    for tmp_item_info in test_plan_item.items():
+                        print "{%s:%s} is not processed" % tmp_item_info
+
+            if plan_mode == TEST_PLAN_MODE_DEFINED:
+                for cfg_path in cfg_paths.split(' '):
+                    # os.path.exists(cfg_path) and os.path.isfile(cfg_path):
+                    print "Start to dispatch config file: %s" % cfg_path
+                    if copy_file_method == 'scp':
+                        cmd = 'scp %s root@%s:%s' % (cfg_path, host_ip,
+                                                     TEST_CONFIG_FILE_DIR)
+                        process.run(cmd, shell=True)
+                    else:
+                        staf = LenovoSTAF(local_ip)
+                        counter = 1
+                        timeout = 12
+                        while counter <= 10:
+                            print "set copy cfg file timeout to %d seconds" % timeout
+                            print "copy cfg file trial: %d" % counter
+                            run_process = multiprocessing.Process(target=staf.copy_file_to,
+                                                                  args=(cfg_path, host_ip, TEST_CONFIG_FILE_DIR),
+                                                                  kwargs={"is_source_loc_dir": False, "is_recurse": False,
+                                                                          "is_dest_loc_dir": True,
+                                                                          "err_on_exists": False})
+                            run_process.start()
+                            run_process.join(timeout)
+
+                            if run_process.is_alive():
+                                print "force stop process %d" % run_process.pid
+                                run_process.terminate()
+                                run_process.join()
+                                timeout += 1
+                            elif run_process.exitcode == 0:
+                                print "copy cfg file successfully"
+                                break
+                            counter += 1
+                            print "wait for 5 seconds, and try again"
+                            time.sleep(5)
+                        else:
+                            print "copy cfg file failed, exit test, please confirm your network"
+                            sys.exit(1)
+                        staf.close_staf_handle()
+
+            test_plans.append(
+                {"host_ip": host_ip, "plan_name": plan_name, "plan_timeout": plan_timeout, "plan_uuid": plan_uuid,
+                 "plan_mode": plan_mode, "plan_location": plan_location, "cfg_path": cfg_path,
+                 "product_build_number": product_build_number, "extra_params": extra_params})
+
+        self.print_parse_result(test_plans)
+        sys.stdout.flush()
+
+        if self.args["is_stop_action"]:
+            self.stop(test_plans)
+        else:
+            self.run(test_plans)
+
+    def print_parse_result(self, test_plans):
+        print "test plan info:"
+        print "=" * 50
+        for tmp_test_plan in test_plans:
+            for (key, value) in tmp_test_plan.items():
+                print "%s=%s" % (key, value)
+            print "-" * 40
+        print "=" * 50
+
+    def run(self, test_plans):
+        staf_handle_list = []
+        for test_plan in test_plans:
+            log_file = os.path.join(os.path.dirname(self.args.get('file_path')), 'avocado_run_test_strategy.log')
+
+            exe_command = "avocado run %s" % (test_plan["plan_name"])
+            if self.args["job_results_dir"]:
+                exe_command += " --job-results-dir %s" % self.args["job_results_dir"]
+            else:
+                exe_command += " --job-results-dir %s" % os.path.join(DEFAULT_JOB_RESULTS_DIR, test_plan["host_ip"])
+            if self.args["mail_to"]:
+                exe_command += " --mail-to %s" % self.args["mail_to"]
+            if test_plan["plan_uuid"]:
+                exe_command += " --force-job-id %s" % test_plan["plan_uuid"]
+            if test_plan["product_build_number"]:
+                exe_command += " --product-build-number %s" % test_plan["product_build_number"]
+            if test_plan["extra_params"]:
+                exe_command += " %s" % test_plan["extra_params"]
+            exe_command += " | tee %s" % DEFAULT_JOB_RESULTS_DIR + '/' + test_plan['host_ip'] + "/run_" + test_plan['plan_uuid'] + ".log"
+
+            print "execution command: %s" % exe_command
+            if dispatch_test_method in 'ssh':
+                session = RemoteRunner(host=test_plan['host_ip'], use_key=True)
+                result = session.run(exe_command, timeout=999999999999999)
+                try:
+                    f = open(log_file, 'w')
+                    f.write(result)
+                    f.close()
+                except:
+                    pass
+            elif dispatch_test_method in 'staf':
+                test_log_file_path = os.path.join(DEFAULT_JOB_RESULTS_DIR,
+                                                  os.path.join(test_plan['host_ip'], 'staf_' + test_plan['plan_uuid'] + '.log'))
+                staf = LenovoSTAF(test_plan["host_ip"])
+                is_enable_timeout = False
+                if int(test_plan["plan_timeout"]) > 0:
+                    is_enable_timeout = True
+                if self.args["exe_mode"] == MODE_SERIAL:
+                    staf.exe_staf_shell_command(exe_command,
+                                                is_gen_log_file=True,
+                                                log_file_path=test_log_file_path,
+                                                is_wait_result=True,
+                                                is_set_timeout=is_enable_timeout,
+                                                timeout=int(test_plan["plan_timeout"]))
+                    staf.close_staf_handle()
+                elif self.args["exe_mode"] == MODE_PARALLEL:
+                    # do not support plan timeout funciton in parallel mode
+                    result = staf.exe_staf_shell_command(exe_command,
+                                                         is_gen_log_file=True,
+                                                         log_file_path=test_log_file_path,
+                                                         is_wait_result=False,
+                                                         is_set_timeout=False,
+                                                         timeout=int(test_plan["plan_timeout"]))
+                    staf_handle_list.append((staf, result))
+        if self.args["exe_mode"] == MODE_PARALLEL:
+            # following method need to check when parallel mode is developing
+            # self.wait_parallel_execution(staf_handle_list)
+            pass
+
+    def stop(self, test_plans):
+        print "execute stop commad"
+        stop_command = "pkill avocado"
+        force_stop_command = "pkill -9 avocado"
+        for test_plan in test_plans:
+            if dispatch_test_method in 'ssh':
+                session = RemoteRunner(host=test_plan['host_ip'], use_key=True)
+                session.run(stop_command, timeout=5)
+                time.sleep(5)
+                session.run(force_stop_command, timeout=5)
+                if test_plan["plan_name"].lower() == "tempest":
+                    result = session.run("ps -aux | grep tempest", timeout=5)
+                    reader = StringIO.StringIO(result)
+                    for line in reader:
+                        if line.find("tempest/test_discover") != -1:
+                            print "kill tempest related process %s" % line.split()[1]
+                            session.run("kill -9 " + line.split()[1])
+                    reader.close()
+                if 'stability' or 'performance' in test_plan["plan_name"].lower():
+                    session.run("pkill -9 rally", timeout=5)
+            elif dispatch_test_method in 'staf':
+                stop_handle = LenovoSTAF(test_plan["host_ip"])
+                stop_handle.exe_staf_shell_command(stop_command)
+                time.sleep(5)
+                stop_handle.exe_staf_shell_command(force_stop_command)
+                if test_plan["plan_name"].lower() == "tempest":
+                    result = stop_handle.exe_staf_shell_command("ps -aux | grep tempest")
+                    reader = StringIO.StringIO(result)
+                    for line in reader:
+                        if line.find("tempest/test_discover") != -1:
+                            print "kill tempest related process %s" % line.split()[1]
+                            stop_handle.exe_staf_shell_command("kill -9 " + line.split()[1])
+                    reader.close()
+                if 'stability' or 'performance' in test_plan["plan_name"].lower():
+                    result = stop_handle.exe_staf_shell_command("pkill -9 rally")
+                # keep following code here, in case that it will be used later
+                # for (process_handle_id, process_command) in stop_handle.get_defined_process(filter_mode="RUNNING"):
+                #     if test_plan["plan_uuid"] in process_command:
+                #         if not stop_handle.stop_handle_process(process_handle_id):
+                #             stop_handle.stop_handle_process(process_handle_id)
+                stop_handle.close_staf_handle()
+
+        sys.stdout.flush()
+
+    def wait_parallel_execution(self, handle_list):
+        while True:
+            is_have_alive_process = False
+            for (handle, process_id) in handle_list:
+                for (process_handle_id, process_command) in handle.get_defined_process(filter_mode="RUNNING"):
+                    if process_id == process_handle_id:
+                        is_have_alive_process = True
+                        break
+                if is_have_alive_process:
+                    break
+            if is_have_alive_process:
+                print "wait for 10s"
+                time.sleep(10)
+            else:
+                print "all test plans finished, quit wait loop"
+                break
+
+
+if __name__ == '__main__':
+    import logging
+
+    logger = logging.getLogger("avocado.test")
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    decoder = StrategyDecoder(sys.argv[1:])
+    sys.exit(decoder.decode_and_run_strategy())

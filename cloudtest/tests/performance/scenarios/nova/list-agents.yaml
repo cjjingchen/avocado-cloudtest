@@ -1,0 +1,9 @@
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaAgents.list_agents:
+    -
+      runner:
+        type: "constant"
+        concurrency: {{concurrency}}
+        times: {{times}}

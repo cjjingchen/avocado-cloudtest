@@ -1,0 +1,20 @@
+{% set users_per_tenant = users_per_tenant or "3" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NeutronNetworks.list_agents:
+    -
+      args:
+        agent_args: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+      sla:
+        failure_rate:
+          max: 0

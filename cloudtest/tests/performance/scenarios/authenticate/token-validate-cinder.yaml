@@ -1,0 +1,17 @@
+{% set users_per_tenant = users_per_tenant or "5" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "10" %}
+---
+  Authenticate.validate_cinder:
+    -
+      args:
+        repetitions: 2
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

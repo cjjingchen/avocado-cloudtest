@@ -1,0 +1,23 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  Watcher.create_audit_and_delete:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        audit_templates:
+          audit_templates_per_admin: 5
+          fill_strategy: "round_robin"
+          params:
+            - goal:
+                  name: "dummy"
+              strategy:
+                  name: "dummy"

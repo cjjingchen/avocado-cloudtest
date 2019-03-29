@@ -1,0 +1,197 @@
+#!/bin/bash
+#
+# Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+# Functions related to grenade plugins
+#
+# The following variables are assumed to be defined by certain functions:
+#
+# - ``GRENADE_DIR``
+# - ``SAVE_DIR``
+# - ``UPGRADE_PROJECTS``
+# - ``PLUGIN_DIR``
+# - ``BASE_DEVSTACK_DIR``
+
+GRENADE_DB=$SAVE_DIR/grenade_db.ini
+
+function load_settings {
+    # In tree plugins
+    local in_tree_plugins=$RC_DIR/projects
+    for dir in $in_tree_plugins/*; do
+        local settings=$dir/settings
+        if [[ -e $settings ]]; then
+            source $settings
+        fi
+    done
+
+    # External plugins
+    local plugins="${GRENADE_PLUGINS}"
+    local plugin
+
+    # short circuit if nothing to do
+    if [[ -z $plugins ]]; then
+        return
+    fi
+
+    echo "Loading plugin settings"
+    for plugin in ${plugins//,/ }; do
+        local dir=${GITDIR[$plugin]}
+        # source any known settings
+        if [[ -f $dir/devstack/upgrade/settings ]]; then
+            echo "Loading settings for $plugin from $dir/devstack/upgrade/settings"
+            source $dir/devstack/upgrade/settings
+        fi
+    done
+
+    export UPGRADE_PROJECTS
+}
+
+function reverse_list {
+    local str=""
+    local reversed=""
+    for str in $@; do
+        reversed="$str $reversed"
+    done
+
+    echo $reversed
+}
+
+function shutdown_services {
+    local projects=""
+    local project=""
+
+    projects=`reverse_list "$UPGRADE_PROJECTS"`
+    echo "Upgrade projects: $projects"
+    # iterate in reverse under the theory that we should take down
+    # services in opposite order
+    for project in $projects; do
+        echo "Looking for $project"
+        local dir=${PLUGIN_DIR[$project]}
+        if [[ -z "$dir" ]]; then
+            die $LINENO "Couldn't find project '$project' in plugin list"
+        fi
+        local shutdown=$dir/shutdown.sh
+        if [[ -e $shutdown ]]; then
+            TOP_DIR=$BASE_DEVSTACK_DIR $shutdown || die $LINENO "Failed to shutdown $project"
+        fi
+    done
+}
+
+function resources {
+    # which resource phase are we in
+    local phase=$1
+    local side=$2
+    local project=""
+
+    # bail early if we aren't going to do this level of verification.
+    if [[ "$VERIFY_RESOURCES" != "True" ]]; then
+        echo "Skipping resource phase ``$phase`` by configuration"
+        return
+    fi
+    echo_summary "Running resource phase: ``$phase``"
+
+    local projects=$UPGRADE_PROJECTS
+    if [[ $phase == "destroy" ]];then
+        projects=`reverse_list "$UPGRADE_PROJECTS"`
+    fi
+
+    for project in $projects; do
+        local dir=${PLUGIN_DIR[$project]}
+        if [[ -z "$dir" ]]; then
+            die $LINENO "Couldn't find project '$project' in plugin list"
+        fi
+        local resource=$dir/resources.sh
+        if [[ -e $resource ]]; then
+            # NOTE(sdague): we might need to set topdir differently?
+            TOP_DIR=$BASE_DEVSTACK_DIR LOGDIR=$LOGDIR \
+                   $resource $phase $side || die $LINENO "Failed to run ``$resource $phase $side``"
+        fi
+    done
+}
+
+# initialize the grenade_db and ensure that it's blank for each run
+function init_grenade_db {
+    mkdir -p $SAVE_DIR
+    echo "" > $GRENADE_DB
+}
+
+function resource_save {
+    local project=$1
+    local key=$2
+    local value=$3
+    iniset $GRENADE_DB $project $key $value
+}
+
+function resource_get {
+    local project=$1
+    local key=$2
+    local value=$(iniget $GRENADE_DB $project $key)
+    echo $value
+}
+
+# External plugin interface for grenade
+
+function enable_grenade_plugin {
+    local name=$1
+    local url=$2
+    local branch=${3:-$TARGET_DEVSTACK_BRANCH}
+    # the following allows us to set the PLUGIN_DIR for the gate to
+    # zuul checked out locations.
+    local plugin_dir=${PLUGIN_DIR:-$STACK_ROOT/plugins}
+    GRENADE_PLUGINS+=",$name"
+    # NOTE(sdague): we're intentional namespace colliding with
+    # devstack to reuse devstack architecture. I don't think this is
+    # going to get us in trouble, but it might. So here be dragons, or
+    # at least small fierce lizards of unknown provenance.
+    GITREPO[$name]=$url
+    GITDIR[$name]=$plugin_dir/$name
+    GITBRANCH[$name]=$branch
+}
+
+function devstack_localrc {
+    local settings_file=$(caller | awk '{print $2}')
+    local where=$1
+    shift
+    case $where in
+        base)
+            echo "# added by $settings_file" >> $BASE_DEVSTACK_DIR/localrc
+            echo "$@" >> $BASE_DEVSTACK_DIR/localrc
+            ;;
+        target)
+            echo "# added by $settings_file" >> $TARGET_DEVSTACK_DIR/localrc
+            echo "$@" >> $TARGET_DEVSTACK_DIR/localrc
+            ;;
+    esac
+}
+
+function fetch_grenade_plugins {
+    local plugins="${GRENADE_PLUGINS}"
+    local plugin
+
+    # short circuit if nothing to do
+    if [[ -z $plugins ]]; then
+        return
+    fi
+
+    echo "Fetching Grenade plugins"
+    for plugin in ${plugins//,/ }; do
+        git_clone_by_name $plugin
+    done
+}
+
+# this allows us to expose this late
+if [[ -f ${GRENADE_DIR}/pluginrc ]]; then
+    source ${GRENADE_DIR}/pluginrc
+fi

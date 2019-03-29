@@ -1,0 +1,30 @@
+{% set floating_network = floating_network or "public" %}
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+{% set image_name = image_name or "^cirros.*uec$" %}
+{% set flavor_name = flavor_name or "m1.tiny" %}
+---
+  VMTasks.boot_runcommand_delete:
+    -
+      args:
+        flavor:
+            name: "{{flavor_name}}"
+        image:
+            name: "{{image_name}}"
+        floating_network: {{floating_network}}
+        force_delete: false
+        command:
+            interpreter: "/bin/sh"
+            script_file: "samples/tasks/support/instance_test.sh"
+        username: "cirros"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        network: {}

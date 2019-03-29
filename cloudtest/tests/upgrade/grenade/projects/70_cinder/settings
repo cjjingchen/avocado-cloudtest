@@ -1,0 +1,4 @@
+if is_service_enabled c-api; then
+    register_project_for_upgrade cinder
+    register_db_to_save cinder
+fi

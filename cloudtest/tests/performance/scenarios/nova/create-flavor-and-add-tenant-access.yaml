@@ -1,0 +1,24 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+{% set failure_rate = failure_rate or "100" %}
+---
+  NovaFlavors.create_flavor_and_add_tenant_access:
+    -
+      runner:
+        type: "constant"
+        concurrency: {{concurrency}}
+        times: {{times}}
+      args:
+        ram: 500
+        vcpus : 1
+        disk: 1
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+      sla:
+        failure_rate: {{failure_rate}}
+          max: 0
+

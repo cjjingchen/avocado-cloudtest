@@ -1,0 +1,59 @@
+Installation guide
+-----------------------------------------------------------
+This document is a guide for installing avocado-cloudtest, Rally, Tempest,
+STAF, health-check.
+
+About Roles
+-----------------------------------------------------------
+The role is host identity types that can work in avocado-cloudtest range.
+There are two roles in the avocado-cloudtest. One of roles is 'master' that
+is work as a stack's host. The other of roles is 'slave' that can launch 
+any testing tasks to master. Use parameter '-r' to choice what role will be.
+
+About Module
+-----------------------------------------------------------
+Which parts are supported to install. They are avocado-cloudtest, Rally,
+Tempest, health_check, STAF. For master role can install avocado-cloudest.
+For slave role can install the others. Use parameter '-m' to choice what 
+module will be installed.
+
+Pre-installation
+-----------------------------------------------------------
+Get avocado-cloudtest source code tree from Gerrit.
+(git clone http://10.100.4.211:8088/avocado-cloudtest)
+
+Installation
+-----------------------------------------------------------
+Use the script install.sh which is in the root of source code tree to 
+install what you need. 
+
+The default installation mode is to install avocado-cloudtest for master 
+role:
+    ./install.sh
+This cmd is same as:
+	./install.sh -m avocado -r master
+
+
+And that supports to install one or many of parts for slave role, to install
+some one module are:
+	./install.sh -r slave -m avocado
+	./install.sh -r slave -m tempest
+	./install.sh -r slave -m rally
+	./install.sh -r slave -m staf
+	./install.sh -r slave -m healthcheck
+To install all modules by one command is :
+	./install.sh -r slave -m all
+This cmd will install Tempest,Rally,STAF,health_check on slave.
+
+If you need see more detailed information, you can give a parameter '--debug'
+following at the command end:
+	./install.sh -r slave -m rally --debug
+If you do not give that parameter, you will get a very simple information 
+about installation.
+
+
+
+
+
+
+

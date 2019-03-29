@@ -1,0 +1,9 @@
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaServices.list_services:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

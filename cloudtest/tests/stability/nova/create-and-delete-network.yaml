@@ -1,0 +1,18 @@
+{% set start_cidr= start_cidr or "10.10.0.0/24" %}
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "5" %}
+---
+  NovaNetworks.create_and_delete_network:
+    -
+      args:
+        start_cidr: {{start_cidr}}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

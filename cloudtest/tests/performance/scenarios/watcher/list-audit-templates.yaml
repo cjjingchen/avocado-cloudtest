@@ -1,0 +1,22 @@
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "10" %}
+---
+  Watcher.list_audit_templates:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        audit_templates:
+          audit_templates_per_admin: 5
+          fill_strategy: "random"
+          params:
+            - goal:
+                  name: "workload_balancing"
+              strategy:
+                  name: "workload_stabilization"
+            - goal:
+                  name: "dummy"
+              strategy:
+                  name: "dummy"

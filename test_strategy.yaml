@@ -1,0 +1,19 @@
+tests:
+  - test_plan:
+    - hosts: "10.100.3.49"
+    - plan_name: "rally"
+    - plan_timeout: 30
+    - uuid: ".3.49"
+    - plan_mode: "user_defined_cases"
+    - plan_location: "/tmp"
+    - cfg_path: "/tmp/my.cfg"
+    - avocado_cmd_params: "-t test"
+  - test_plan:
+    - hosts: "10.100.3.169"
+    - plan_name: "tempest"
+    - plan_timeout: 0
+    - uuid: ".3.169"
+    - plan_mode: "auto"
+    - plan_location: "~"
+    - cfg_path:
+    - avocado_cmd_params:

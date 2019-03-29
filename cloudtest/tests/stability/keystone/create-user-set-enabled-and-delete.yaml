@@ -1,0 +1,18 @@
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  KeystoneBasic.create_user_set_enabled_and_delete:
+    -
+      args:
+        enabled: true
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+    -
+      args:
+        enabled: false
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

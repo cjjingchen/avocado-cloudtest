@@ -1,0 +1,18 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "50" %}
+---
+  MistralWorkbooks.create_workbook:
+    -
+      args:
+        definition: rally-jobs/extra/mistral_wb.yaml
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+

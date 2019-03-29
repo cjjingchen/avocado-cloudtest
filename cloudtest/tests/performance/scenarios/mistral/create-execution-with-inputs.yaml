@@ -1,0 +1,22 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "20" %}
+---
+  MistralExecutions.create_execution_from_workbook:
+    -
+      args:
+        definition: rally-jobs/extra/mistral_wb.yaml
+        wf_input: rally-jobs/extra/mistral_input.json
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+      sla:
+        failure_rate:
+          max: 0
+

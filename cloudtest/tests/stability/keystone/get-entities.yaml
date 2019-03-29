@@ -1,0 +1,9 @@
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  KeystoneBasic.get_entities:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

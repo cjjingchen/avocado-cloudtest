@@ -1,0 +1,23 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "1" %}
+{% set image_name = image_name or "^cirros.*uec$" %}
+{% set flavor_name = flavor_name or "m1.tiny" %}
+---
+  NovaServers.boot_and_associate_floating_ip:
+    -
+      args:
+        flavor:
+            name: "{{flavor_name}}"
+        image:
+            name: "{{image_name}}"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        network: {}

@@ -1,0 +1,21 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "5" %}
+---
+  Dummy.dummy_timed_atomic_actions:
+    -
+      args:
+        number_of_actions: 1
+        sleep_factor: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      sla:
+        max_avg_duration_per_atomic:
+          action_0: 1.0
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

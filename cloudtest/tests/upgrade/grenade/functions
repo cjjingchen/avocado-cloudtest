@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+#
+# functions - Grenade-specific functions
+#
+# The following variables are assumed to be defined by certain functions:
+#
+# - ``GRENADE_DIR``
+# - ``TARGET_DEVSTACK_DIR``
+# - ``MYSQL_PASSWORD``
+# - ``SAVE_DIR``
+
+
+# Save trace setting
+_XTRACE_GRENADE_FUNCTIONS=$(set +o | grep xtrace)
+set +o xtrace
+
+# Include the common functions
+GRENADE_DIR=$(cd $(dirname "${BASH_SOURCE:-$0}") && pwd)
+source ${TARGET_DEVSTACK_DIR}/functions
+source ${TARGET_DEVSTACK_DIR}/lib/stack
+source ${GRENADE_DIR}/inc/upgrade
+source ${GRENADE_DIR}/inc/plugin
+
+# just like source, except turn off tracing, as it just gets in the way
+function source_quiet {
+    XTRACE=$(set +o | grep xtrace)
+    set +o xtrace
+    source $@
+    $XTRACE
+}
+
+# TODO: we'd really like to use the ping_check_functions that exist in
+# devstack, however they are all wrapped up in lib/neutron-legacy
+# gorp. Until that can be cleanly separated we need to keep our own
+# copy here.
+#
+# ping_check_public $ip $timeout [False] - ping an machine on a public
+# ip address. Should work with either neutron or nova-net. Also works
+# to ensure the guest is not up if you pass False as last parameter.
+function ping_check_public {
+    local ip=$1
+    local boot_timeout=$2
+    local expected=${3:-"True"}
+    local check_command=""
+    if [[ "$expected" = "True" ]]; then
+        check_command="while ! ping -c1 -w1 $ip; do sleep 1; done"
+    else
+        check_command="while ping -c1 -w1 $ip; do sleep 1; done"
+    fi
+    if ! timeout $boot_timeout sh -c "$check_command"; then
+        if [[ "$expected" = "True" ]]; then
+            die $LINENO "[Fail] Couldn't ping server"
+        else
+            die $LINENO "[Fail] Could ping server"
+        fi
+    fi
+}
+
+# save_data() dumps service datastores into SAVE_DIR for base or
+# target release.
+function save_data {
+    local release=$1
+    local dir=$2
+    echo_summary "Dumping $release databases"
+    mkdir -p $SAVE_DIR
+    save_mysql_dbs $release $dir
+}
+
+function worlddump {
+    local name=$1
+    if [[ -n "$name" ]]; then
+        name="-n $name"
+    fi
+    if [[ -x $TARGET_DEVSTACK_DIR/tools/worlddump.py ]]; then
+        $TARGET_DEVSTACK_DIR/tools/worlddump.py $name -d $LOGDIR
+        sleep 1
+    else
+        echo "WARNING: Attempted to worlddump but couldn't find $TARGET_DEVSTACK_DIR/tools/worlddump.py"
+    fi
+}
+
+
+# Setup Exit Traps for debug purposes
+trap exit_trap EXIT
+function exit_trap {
+    # really important that this is the *first* line in this
+    # function, otherwise we corrupt the exit code
+    local r=$?
+
+    # we don't need tracing during this
+    set +o xtrace
+
+    # we have to turn off errexit at this point, otherwise we're going
+    # to exit from this function early when the while caller ends
+    # (with a bad exit)
+    set +o errexit
+
+    if [[ $r -ne 0 ]]; then
+        # unwind the call stack on failures
+        local frame=0
+        while caller $frame; do
+            ((frame++));
+        done
+        echo "Exit code: $r"
+        worlddump
+    fi
+    exit $r
+}
+
+
+# Force a shorter connect timeout, if networking has gone off the
+# rails we could potentially be hanging around for minutes on every
+# ssh attempt due to TCP timeouts/retries.
+#
+# Don't check or store host keys, which makes it easier for local dev
+# when hosts come and go.
+#
+# Auto-accept whatever we connect to
+FSSH="ssh -v -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
+
+# Restore xtrace
+$_XTRACE_GRENADE_FUNCTIONS

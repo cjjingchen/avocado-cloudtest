@@ -1,0 +1,15 @@
+{% set users_per_tenant = users_per_tenant or "50" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "100" %}
+---
+  Authenticate.keystone:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

@@ -1,0 +1,21 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "3" %}
+{% set times = times or "6" %}
+---
+  SwiftObjects.list_objects_in_containers:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        roles:
+          - "admin"
+        swift_objects:
+          containers_per_tenant: 1
+          objects_per_container: 10
+          object_size: 1024

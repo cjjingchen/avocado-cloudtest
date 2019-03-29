@@ -1,0 +1,26 @@
+-   repo: http://10.100.4.211/cloudtest/pre-commit-hooks.git
+    sha: e626cd57090d8df0be21e4df0f4e55cc3511d6ab
+    hooks:
+    -   id: autopep8-wrapper
+        args:
+        - --in-place
+        - --ignore=E501,E228,E226,E261,E266,E128,E402,E241
+    -   id: check-added-large-files
+    -   id: check-ast
+    -   id: check-case-conflict
+    -   id: check-docstring-first
+    -   id: check-json
+    -   id: pretty-format-json
+    -   id: check-merge-conflict
+    -   id: check-xml
+    -   id: check-yaml
+    -   id: debug-statements
+    -   id: detect-private-key
+    -   id: flake8
+        args:
+        - --ignore=E501,E228,E226,E261,E266,E128,E402,W503
+        - --builtins=G,request
+        - --jobs=1
+    -   id: end-of-file-fixer
+    -   id: requirements-txt-fixer
+    -   id: trailing-whitespace

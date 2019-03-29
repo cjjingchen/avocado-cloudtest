@@ -1,0 +1,36 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "2" %}
+---
+  MuranoEnvironments.create_and_deploy_environment:
+    -
+      args:
+        packages_per_env: 2
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        murano_packages:
+          app_package: "rally-jobs/extra/murano/applications/HelloReporter/io.murano.apps.HelloReporter.zip"
+        roles:
+          - "admin"
+    -
+      args:
+        packages_per_env: 2
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        murano_packages:
+          app_package: "rally-jobs/extra/murano/applications/HelloReporter/io.murano.apps.HelloReporter/"
+        roles:
+          - "admin"

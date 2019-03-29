@@ -1,0 +1,18 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "10" %}
+---
+  HeatStacks.list_stacks_and_events:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        stacks:
+          stacks_per_tenant: 2
+          resources_per_stack: 10

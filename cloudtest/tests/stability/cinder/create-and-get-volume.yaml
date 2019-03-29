@@ -1,0 +1,21 @@
+{% set size = size or 1 %}
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "5" %}
+---
+  CinderVolumes.create_and_get_volume:
+    -
+      args:
+        size: {{size}}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+      sla:
+        failure_rate:
+          max: 0

@@ -1,0 +1,189 @@
+#!/bin/bash
+#
+# Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# The following variables are assumed to be defined by certain functions:
+#
+# - ``GRENADE_DIR``
+# - ``TARGET_DEVSTACK_DIR``
+# - ``SCREEN_LOGDIR``
+# - ``PLUGIN_DIR``
+# - ``MYSQL_PASSWORD``
+
+export DATABASES_TO_SAVE=${DATABASES_TO_SAVE:-}
+
+# save_data
+function save_mysql_dbs {
+    local release=$1
+    local dir=$2
+    # pull the mysql pass from the old config
+    local mysql_pass=$(
+        set +o xtrace &&
+            source $dir/stackrc &&
+            echo $MYSQL_PASSWORD)
+    local database_user=$(
+        set +o xtrace &&
+            source $dir/stackrc &&
+            echo ${DATABASE_USER:-root})
+    for db in $DATABASES_TO_SAVE; do
+        mysqldump -u$database_user -p$mysql_pass $db >$SAVE_DIR/$db.sql.$release
+    done
+}
+
+# register a database we should save
+function register_db_to_save {
+    for db in $@; do
+        DATABASES_TO_SAVE+=" $db"
+    done
+}
+
+# Upgrade a service listed in $UPGRADE_PROJECTS.
+function upgrade_service {
+    local local_service=$1
+    local plugin_dir=${PLUGIN_DIR[$local_service]}
+    if [[ -n "$plugin_dir" ]]; then
+        echo_summary "Upgrading $local_service..."
+        TOP_DIR=$TARGET_DEVSTACK_DIR $plugin_dir/upgrade.sh || die $LINENO "Failure in $plugin_dir/upgrade.sh"
+    else
+        echo_summary "Upgrading $local_service... (legacy mode)"
+        $GRENADE_DIR/upgrade-$local_service || die $LINENO "Failure in upgrade-$local_service"
+    fi
+}
+
+# This function triggers the upgrade process for each project if it exists,
+# otherwise it shows up a warning message about the lack of this file.
+function upgrade_project {
+    # NOTE(maurosr): Ideally in a new upgrade test right after a release no new
+    # configuration is need, so we can go on without the from-<release> directory.
+    # This is also useful due to cross dependencie between d-g and grenade when
+    # enabling grenade to run an upgrade between a new pair of releases.
+
+    project=$1
+    base_dir=$2
+    base_branch=$3
+    target_branch=$4
+
+    if [[ "$base_branch" == "$target_branch" ]]; then
+        direction="within"
+    else
+        direction="from"
+    fi
+
+    upgrade_dir=$(get_release_name_from_branch $base_branch)
+    upgrade_file=${base_dir}/${direction}"-"${upgrade_dir}/"upgrade-"${project}
+    if [[ -e ${upgrade_file} ]]; then
+        source ${upgrade_file} && configure_${project}_upgrade
+    else
+        echo "Warning: No new configurations were found for OpenStack $project."
+        echo "If your patch fails during the upgrade this may be the cause."
+    fi
+}
+
+# Registration interfaces for external plugins
+function register_project_for_upgrade {
+    local project=$1
+    # use caller so that we know the file this function was called
+    # from, and we'll derive the location of the plugin directory from
+    # that.
+    local settings_file=$(caller | awk '{print $2}')
+    local dir=$(dirname $settings_file)
+    UPGRADE_PROJECTS+=" $project"
+    PLUGIN_DIR[$project]=$dir
+}
+
+function is_service_running {
+    local name="$1"
+    # the following is needed to filter out upgrade / shutdown scripts
+    ps auxw | grep -v grep | grep -v shutdown.sh | grep -v upgrade.sh | grep -e "${name}"
+    local exitcode=$?
+    # some times I really hate bash reverse binary logic
+    return $exitcode
+}
+
+# Functions to handle service checking
+
+# ensure_services_stopped
+#
+# wait for services to stop, wait up to 10 seconds because sometimes
+# services take a while to shutdown.
+function ensure_services_stopped {
+    local wait_for=$SERVICE_TIMEOUT
+    local still_running=""
+    while [ $wait_for -gt 0 ]; do
+        still_running=""
+        local service=""
+        for service in "$@"; do
+            if is_service_running "${service}"; then
+                still_running+=" $service"
+            fi
+        done
+
+        if [[ -n "$still_running" ]]; then
+            echo "The following services are still running: $still_running... sleeping and trying again"
+            sleep 1
+        else
+            break
+        fi
+        wait_for=$[$wait_for - 1]
+    done
+
+    if [[ -n "$still_running" ]]; then
+        # TODO(sdague): work around because worlddump is apparently misconfigured
+        ps auxw
+        ss -p -t -o state established
+        die $LINENO "The following services are still running: $still_running"
+    fi
+}
+
+# Functions to handle service checking
+function ensure_services_started {
+    local wait_for=$SERVICE_TIMEOUT
+    while [ $wait_for -gt 0 ]; do
+        not_running=""
+        local service=""
+        for service in "$@"; do
+            if ! is_service_running "${service}"; then
+                not_running+=" $service"
+            fi
+        done
+
+        if [[ -n "$not_running" ]]; then
+            echo "The following services are not running: $not_running... sleeping and trying again"
+            sleep 1
+        else
+            break
+        fi
+        wait_for=$[$wait_for - 1]
+    done
+
+    if [[ -n "$not_running" ]]; then
+        die $LINENO "The following services did not appear to start: $not_running"
+    fi
+}
+
+function ensure_logs_exist {
+    local logname=""
+    local not_found=""
+    for logname in $@; do
+        local log=${SCREEN_LOGDIR}/screen-$logname.log
+        if [[ ! -e $log ]]; then
+            not_found+=" $log"
+        fi
+    done
+
+    if [[ -n "$not_found" ]]; then
+        die $LINENO "The following service logs were not found: $not_found"
+    fi
+}

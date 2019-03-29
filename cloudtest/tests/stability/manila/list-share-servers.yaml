@@ -1,0 +1,11 @@
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "10" %}
+---
+  ManilaShares.list_share_servers:
+    -
+      args:
+        search_opts: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

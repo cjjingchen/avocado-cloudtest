@@ -1,0 +1,9 @@
+include README.rst
+include LICENSE
+include Makefile
+include VERSION
+recursive-include man *
+recursive-include avocado/plugins/html *
+recursive-include selftests *
+recursive-include cloudtest/config *
+recursive-include etc *

@@ -1,0 +1,40 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "1" %}
+{% set image_name = image_name or  fedora %}
+---
+
+  VMTasks.runcommand_heat:
+    -
+      args:
+        workload:
+          resource: ["rally.plugins.workload", "siege.py"]
+          username: "fedora"
+        template: rally-jobs/extra/workload/wordpress_heat_template.yaml
+        files:
+            wp-instances.yaml: rally-jobs/extra/workload/wp-instances.yaml
+        parameters:
+          wp_instances_count: 2
+          wp_instance_type: gig
+          instance_type: gig
+          wp_image: fedora
+          image: "{{image_name}}"
+          network_id: 9d477754-e9ba-4560-9b2b-9ce9d36638ce
+          router_id: c497caa1-9d73-402b-bcd1-cc269e9af29e
+
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        flavors:
+          - name: gig
+            ram: 1024
+            disk: 4
+            vcpus: 1
+
+      runner:
+        concurrency: {{concurrency}}
+        timeout: 3000
+        times: {{times}}
+        type: constant

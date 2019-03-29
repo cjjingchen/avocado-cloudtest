@@ -1,0 +1,13 @@
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "20" %}
+---
+  KeystoneBasic.authenticate_user_and_validate_token:
+    -
+      args: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      sla:
+        failure_rate:
+          max: 0

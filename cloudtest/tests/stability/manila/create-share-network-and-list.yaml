@@ -1,0 +1,23 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "10" %}
+---
+  ManilaShares.create_share_network_and_list:
+    -
+      args:
+        name: "rally"
+        detailed: True
+        search_opts:
+          name: "rally"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        quotas:
+          manila:
+            share_networks: -1
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

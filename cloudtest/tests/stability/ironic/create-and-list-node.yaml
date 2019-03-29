@@ -1,0 +1,17 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "5" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  IronicNodes.create_and_list_node:
+    -
+      args:
+        driver: "pxe_ssh"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

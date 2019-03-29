@@ -1,0 +1,30 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "3" %}
+{% set flavor_number = flavor_number or  1 %}
+{% set image_name = image_name or  "cirros-0.3.4-x86_64-uec" %}
+---
+  SenlinClusters.create_and_delete_cluster:
+    -
+      args:
+        desired_capacity: 3
+        min_size: 0
+        max_size: 5
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        profiles:
+          type: os.nova.server
+          version: "1.0"
+          properties:
+            name: cirros_server
+            flavor: {{flavor_number}}
+            image: "{{image_name}}"
+            networks:
+              - network: private

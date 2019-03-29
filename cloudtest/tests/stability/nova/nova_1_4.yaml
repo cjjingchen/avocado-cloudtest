@@ -1,0 +1,49 @@
+{% set secgroupname_kwargs_value = secgroupname_kwargs_value or "any" %}
+{% set networkname_kwargs_value = networkname_kwargs_value or "pk_1_net" %}
+{% set define_user_password = define_user_password or "123456" %}
+{% set define_user_name = define_user_name or "pk_3_admin" %}
+{% set define_user_id = define_user_id or "88ca2a07cec345809f60d9f4706dc736" %}
+{% set define_tenant_name = define_tenant_name or "pk_3_proj" %}
+{% set define_tenant_id = define_tenant_id or "0d7ff1aeb88d45f0a3ece05e8bda39c8" %}
+{% set define_flag = define_flag or true %}
+{% set flavor_name = flavor_name or "m1.small" %}
+{% set image_name_1 = image_name_1 or "^cirros.*uec$" %}
+{% set image_name_2 = image_name_2 or "root_centos_new" %}
+---
+Nova_Stability.stability_scenarios_nova_1:
+- args:
+    boot_servers_paras:
+    - server_count: 1
+      flavor:
+        name: "{{flavor_name}}"
+      image:
+        name: "{{image_name_2}}"
+      name_prefix: "nova_vm_2_2"
+      final_status: "ACTIVE"
+      detailed: true
+      networkname_kwargs:
+        name: "{{networkname_kwargs_value}}"
+      secgroupname_kwargs:
+        name: "{{secgroupname_kwargs_value}}"
+      bind_fip: true
+      cmds_to_run:
+      - cmd: "ls /"
+        result_keyword: "bin"
+      - cmd: "ls /home/"
+        result_keyword: "root"
+  runner:
+    type: "constant"
+    times: 1
+    concurrency: 1
+  context:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+      define_flag: {{define_flag}}
+      define_tenant_id: "{{define_tenant_id}}"
+      define_tenant_name: "{{define_tenant_name}}"
+      define_user_id: "{{define_user_id}}"
+      define_user_name: "{{define_user_name}}"
+      define_user_password: "{{define_user_password}}"
+
+

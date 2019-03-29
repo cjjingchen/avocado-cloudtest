@@ -1,0 +1,13 @@
+Source: avocado
+Section: python
+Priority: optional
+Maintainer: Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>
+Build-Depends: debhelper (>=7.0.50~), python-support (>= 0.6), cdbs (>= 0.4.49), python-yaml, python-setuptools
+Standards-Version: 3.8.4
+
+Package: avocado
+Architecture: all
+Homepage: http://avocado-framework.github.io/
+XB-Python-Version: ${python:Versions}
+Depends: ${misc:Depends}, ${python:Depends}, python-yaml, python-lzma, python-pystache, gdebi-core, fabric
+Description: Avocado is a framework for fully automated testing.

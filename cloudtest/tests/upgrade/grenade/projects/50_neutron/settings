@@ -1,0 +1,5 @@
+# eventually this conditional will end up at a different level
+if is_service_enabled q-svc; then
+   register_project_for_upgrade neutron
+   register_db_to_save neutron
+fi

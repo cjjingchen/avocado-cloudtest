@@ -1,0 +1,12 @@
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  ZaqarBasic.producer_consumer:
+    -
+      args:
+        min_msg_count: 50
+        max_msg_count: 200
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>CloudTest Job Report</title>
+
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/dataTables.bootstrap.css" rel="stylesheet">
+
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script src="js/jquery.dataTables.min.js"></script>
+        <script src="js/dataTables.bootstrap.js"></script>
+        <script type="text/javascript" charset="utf-8">
+                $(document).ready(function() {
+                    $('#results').dataTable();
+                    $(function () {$('[data-toggle="popover"]').popover()})
+                } );
+
+            </script>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="page-header">
+                <h3>CloudTest Job Report</h3>
+            </div>
+
+            <div class="panel-group" role="tablist">
+                <div class="panel panel-default">
+                    <!-- Default panel contents -->
+                    <div class="panel-heading">
+                        <h4 class="panel-title">Summary</h4>
+                    </div>
+                    <!-- Table -->
+                    <table class="table table-bordered">
+                        <tr>
+                            <td>ID</td><td><tt>{{job_unique_id}}</tt></td>
+                        </tr>
+                        <tr>
+                            <td>Host</td><td><tt>{{hostname}}</tt></td>
+                        </tr>
+                        <tr>
+                            <td>Product Build Number</td><td><tt>{{product_build_number}}</tt></td>
+                        </tr>
+                        <tr>
+                            <td>Results Dir</td><td><a href="{{results_dir}}"><tt>{{results_dir_basename}}</tt></a></td>
+                        </tr>
+                        <tr>
+                            <td>Cumulative Test Time</td><td>{{tests_total_time}} s</td>
+                        </tr>
+                        <tr>
+                            <td>Stats</td><td>From {{tests_total}} tests executed, {{passed}} passed (pass rate of {{pass_rate}}%)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <table id="results" class="display" cellspacing="0" width="100%"><thead>
+            <tr>
+                <th>Start Time</th>
+                <th>Test ID</th>
+                <th>Status</th>
+                <th>Time (sec)</th>
+                <th>Info</th>
+                <th>Debug Log</th>
+            </tr>
+            </thead>
+            {{#tests}}
+                <tr class="{{row_class}}">
+                    <td>{{time_start}}</td>
+                    <td><a href="{{logdir}}">{{name}}</a></td>
+                    <td>{{status}}</td>
+                    <td>{{time}}</td>
+                    <td>{{& fail_reason}}</td>
+                    <td><a href="{{logfile}}">{{logfile_basename}}</a></td>
+                </tr>
+            {{/tests}}
+            </table>
+
+            <!-- Sysinfo start -->
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Sysinfo</h3>
+                </div>
+                <div class="panel-body">
+
+                    <!-- Pre-Tests start -->
+                    <div class="panel-group" id="accordionPre" role="tablist" aria-multiselectable="true">
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingPre">
+                                <h4 class="panel-title"><a data-toggle="collapse" data-parent="#accordionPre" href="#collapsePre" aria-expanded="false" aria-controls="collapsePre"> Pre-Tests </a></h4>
+                            </div>
+                            <div id="collapsePre" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingPre">
+                                <div class="panel-body">
+                                    <div class="panel-group" id="accordionPre2" role="tablist" aria-multiselectable="true">
+                                        {{#sysinfo_pre}}
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading" role="tab" id="{{element_id}}">
+                                                <h4 class="panel-title"><a data-toggle="collapse" data-parent="#accordionPre2" href="#{{collapse_id}}" aria-expanded="false" aria-controls="{{collapse_id}}"><tt>{{file}}</tt></a></h4>
+                                            </div>
+                                            <div id="{{collapse_id}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="{{element_id}}">
+                                                <div class="panel-body">
+                                                    <pre>{{contents}}</pre>
+                                                    {{& err}}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{/sysinfo_pre}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Pre-Tests end -->
+
+                    <!-- Post-Tests start -->
+                    <div class="panel-group" id="accordionPost" role="tablist" aria-multiselectable="true">
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingPost">
+                                <h4 class="panel-title"><a data-toggle="collapse" data-parent="#accordionPost" href="#collapsePost" aria-expanded="false" aria-controls="collapsePost"> Post-Tests </a></h4>
+                            </div>
+                            <div id="collapsePost" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingPost">
+                                <div class="panel-body">
+                                    <div class="panel-group" id="accordionPost2" role="tablist" aria-multiselectable="true">
+                                        {{#sysinfo_post}}
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading" role="tab" id="{{element_id}}">
+                                                <h4 class="panel-title"><a data-toggle="collapse" data-parent="#accordionPost2" href="#{{collapse_id}}" aria-expanded="false" aria-controls="{{collapse_id}}"><tt>{{file}}</tt></a></h4>
+                                            </div>
+                                            <div id="{{collapse_id}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="{{element_id}}">
+                                                <div class="panel-body">
+                                                    <pre>{{contents}}</pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{/sysinfo_post}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Post-Tests end -->
+
+                    <!-- Profilers start -->
+                    <div class="panel-group" id="accordionProfile" role="tablist" aria-multiselectable="true">
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingProfile">
+                                <h4 class="panel-title"><a data-toggle="collapse" data-parent="#accordionProfile" href="#collapseProfile" aria-expanded="false" aria-controls="collapseProfile"> Profilers </a></h4>
+                            </div>
+                            <div id="collapseProfile" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingProfile">
+                                <div class="panel-body">
+                                    <div class="panel-group" id="accordionProfile2" role="tablist" aria-multiselectable="true">
+                                        {{#sysinfo_profile}}
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading" role="tab" id="{{element_id}}">
+                                                <h4 class="panel-title"><a data-toggle="collapse" data-parent="#accordionProfile2" href="#{{collapse_id}}" aria-expanded="false" aria-controls="{{collapse_id}}"><tt>{{file}}</tt></a></h4>
+                                            </div>
+                                            <div id="{{collapse_id}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="{{element_id}}">
+                                                <div class="panel-body">
+                                                    <pre>{{contents}}</pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{/sysinfo_profile}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Profilers end -->
+
+                </div>
+            </div>
+            <!-- Sysinfo end -->
+
+        </div>
+        <script type="text/javascript">
+            $('#results')
+                .removeClass( 'display' )
+                .addClass('table table-striped table-bordered');
+        </script>
+    </body>
+</html>

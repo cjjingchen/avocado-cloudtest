@@ -1,0 +1,62 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "1" %}
+---
+  MagnumClusters.create_and_list_clusters:
+    -
+      args:
+        node_count: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        cluster_templates:
+          image_id: "fedora-atomic-latest"
+          external_network_id: "public"
+          dns_nameserver: "8.8.8.8"
+          flavor_id: "m1.small"
+          docker_volume_size: 5
+          network_driver: "flannel"
+          coe: "kubernetes"
+    -
+      args:
+        node_count: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        cluster_templates:
+          image_id: "fedora-atomic-latest"
+          external_network_id: "public"
+          dns_nameserver: "8.8.8.8"
+          flavor_id: "m1.small"
+          docker_volume_size: 5
+          network_driver: "docker"
+          coe: "swarm"
+    -
+      args:
+        node_count: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        cluster_templates:
+          image_id: "ubuntu-mesos"
+          external_network_id: "public"
+          dns_nameserver: "8.8.8.8"
+          flavor_id: "m1.small"
+          network_driver: "docker"
+          coe: "mesos"

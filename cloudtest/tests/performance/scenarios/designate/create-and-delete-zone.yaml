@@ -1,0 +1,21 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "10" %}
+---
+  DesignateBasic.create_and_delete_zone:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        quotas:
+          designate:
+            domains: 100
+            domain_recordsets: 500
+            domain_records: 2000
+            recordset_records: 2000
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

@@ -1,0 +1,19 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "3" %}
+---
+  HeatStacks.create_stack_and_scale:
+    -
+      args:
+        template_path: "samples/tasks/scenarios/heat/templates/autoscaling-group.yaml.template"
+        output_key: "scaling_url"
+        delta: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

@@ -1,0 +1,20 @@
+{% set users_per_tenant = users_per_tenant or "3" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  NeutronSecurityGroup.create_and_delete_security_groups:
+    -
+      args:
+        security_group_create_args: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        quotas:
+          neutron:
+            security_group: -1

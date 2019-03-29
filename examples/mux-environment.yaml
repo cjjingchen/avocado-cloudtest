@@ -1,0 +1,23 @@
+hw:
+    cpu: !mux
+        intel:
+            cpu_CFLAGS: '-march=core2'
+        amd:
+            cpu_CFLAGS: '-march=athlon64'
+        arm:
+            cpu_CFLAGS: '-mabi=apcs-gnu -march=armv8-a -mtune=arm8'
+    disk: !mux
+        scsi:
+            disk_type: 'scsi'
+        virtio:
+            disk_type: 'virtio'
+distro: !mux
+    fedora:
+        init: 'systemd'
+    mint:
+        init: 'systemv'
+env: !mux
+    debug:
+        opt_CFLAGS: '-O0 -g'
+    prod:
+        opt_CFLAGS: '-O2'

@@ -1,0 +1,15 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaKeypair.create_and_delete_keypair:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

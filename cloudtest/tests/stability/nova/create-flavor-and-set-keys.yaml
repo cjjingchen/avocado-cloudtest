@@ -1,0 +1,24 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaFlavors.create_flavor_and_set_keys:
+    -
+      runner:
+        type: "constant"
+        concurrency: {{concurrency}}
+        times: {{times}}
+      args:
+        ram: 500
+        vcpus : 1
+        disk: 1
+        extra_specs:
+          quota:disk_read_bytes_sec: 10240
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+      sla:
+        failure_rate:
+          max: 0

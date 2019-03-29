@@ -1,0 +1,18 @@
+{% set users_per_tenant = users_per_tenant or "4" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "12" %}
+---
+  ManilaShares.list_shares:
+    -
+      args:
+        detailed: True
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+          user_choice_method: "round_robin"

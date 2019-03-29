@@ -1,0 +1,13 @@
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaFlavors.create_and_list_flavor_access:
+    -
+      args:
+        ram: 500
+        vcpus: 1
+        disk: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

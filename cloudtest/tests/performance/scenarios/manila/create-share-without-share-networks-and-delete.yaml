@@ -1,0 +1,24 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "2" %}
+---
+  ManilaShares.create_and_delete_share:
+    -
+      args:
+        share_proto: "nfs"
+        size: 1
+        min_sleep: 1
+        max_sleep: 2
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        quotas:
+          manila:
+            shares: -1
+            gigabytes: -1
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

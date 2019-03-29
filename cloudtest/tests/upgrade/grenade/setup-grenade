@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# setup-grenade [hostname [username]]
+#
+# Assumes ssh keys set up to an account with root privs
+
+# Configuration:
+# * Reads ``grenaderc`` (and ``localrc``) if present;
+# * Reads ``localrc`` if present and ``grenaderc`` is not present
+# * Runs with sane defaults if no ``*rc`` file is present
+
+# Keep track of the source directory
+SRC_DIR=$(cd $(dirname "$0") && pwd)
+
+# Set up some defaults if grenaderc is not present
+GRENADE_REPO=https://git.openstack.org/openstack-dev/grenade
+GRENADE_DIR=${STACK_ROOT}/grenade
+GRENADE_BRANCH=master
+
+STACK_ROOT=/opt/stack
+GRENADE_DIR=${STACK_ROOT}/grenade
+
+# Source params
+if [[ -r $SRC_DIR/grenaderc ]]; then
+    source $SRC_DIR/grenaderc
+elif [[ -r $SRCDIR/localrc ]]; then
+    source $SRC_DIR/localrc
+fi
+
+HOST=${1:-localhost}
+
+DEST_USER=${2:-${USER:-stack}}
+
+set -o xtrace
+
+ssh -t $DEST_USER@$HOST " \
+    sudo mkdir -p ${STACK_ROOT}; \
+    [[ -w ${STACK_ROOT} ]] || sudo chown $DEST_USER ${STACK_ROOT}; \
+    [[ -d $GRENADE_DIR ]] || (cd ${STACK_ROOT}; git clone $GRENADE_REPO $GRENADE_DIR); \
+    [[ -d $GRENADE_DIR ]] && (cd $GRENADE_DIR; git checkout $GRENADE_BRANCH); \
+"
+
+# Copy devstack.localrc if it exists
+if [[ -r $SRC_DIR/devstack.localrc ]]; then
+    scp -p $SRC_DIR/devstack.localrc $DEST_USER@$HOST:$GRENADE_DIR
+fi
+# Copy localrc if it exists
+if [[ -r $SRC_DIR/localrc ]]; then
+    scp -p $SRC_DIR/localrc $DEST_USER@$HOST:$GRENADE_DIR
+fi

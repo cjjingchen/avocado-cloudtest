@@ -1,0 +1,24 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "5" %}
+---
+  CinderVolumeTypes.create_volume_type_and_encryption_type:
+    -
+      args:
+        specs:
+          provider: "LuksEncryptor"
+          cipher: "aes-xts-plain64"
+          key_size: 512
+          control_location: "front-end"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+      sla:
+        failure_rate:
+          max: 0

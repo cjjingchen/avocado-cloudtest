@@ -1,0 +1,19 @@
+{% set size = size or 1 %}
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  CinderVolumes.modify_volume_metadata:
+    -
+      args: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        volumes:
+          size: {{size}}
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

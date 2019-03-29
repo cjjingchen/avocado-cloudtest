@@ -1,0 +1,9 @@
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  KeystoneBasic.create_and_delete_role:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

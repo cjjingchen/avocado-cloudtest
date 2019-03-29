@@ -1,0 +1,178 @@
+- health_check:
+    usage_should_lower_than:
+      cpu: 60
+      memory: 60
+      disk: 60
+      ceph: 70
+    log_should_not_contain_string:
+      nova:
+        nova-api: ["vm created failed", "CRITICAL"]
+        nova-conductor: ["ERROR", "CRITICAL"]
+        nova-cert: ["Traceback"]
+        nova-novncproxy: ["failed","Traceback"]
+      neutron:
+        server: ["create failed","Traceback"]
+        dhcp-agent: ["MessagingTimeout", "Network is unreachable"]
+        vpn-agent: ["Error during"]
+      keystone:
+        keystone: ["Failed to validate token"]
+      glance:
+        registry: ["Unable to validate token"]
+      cinder:
+        volume: ["ImageNotFound"]
+        scheduler: ["No valid host"]
+    process_should_alive:
+      nova:
+        - process:
+            name: "nova-api"
+        - process:
+            name: "nova-conductor"
+        - process:
+            name: "nova-scheduler"
+        - process:
+            name: "nova-novncproxy"
+        - process:
+            name: "nova-cert"
+        - process:
+            name: "nova-consoleauth"
+      neutron:
+        - process:
+            name: "neutron-server"
+        - process:
+            name: "neutron-lbaasv2-agent"
+        - process:
+            name: "neutron-vpn-agent"
+        - process:
+            name: "neutron-metadata-agent"
+        - process:
+            name: "neutron-dhcp-agent"
+        - process:
+            name: "neutron-rootwrap-daemon"
+        - process:
+            name: "neutron-openvswitch-agent"
+      keystone:
+        - process:
+            name: "keystone-all"
+      glance:
+        - process:
+            name: "glance-api"
+        - process:
+            name: "glance-registry"
+      cinder:
+        - process:
+            name: "cinder-volume"
+        - process:
+            name: "cinder-api"
+        - process:
+            name: "cinder-scheduler"
+        - process:
+            name: "cinder-backup"
+
+    service_status_check:
+      controller:
+        nova:
+          - service:
+              name: "openstack-nova-api.service"
+          - service:
+              name: "openstack-nova-cert.service"
+          - service:
+              name: "openstack-nova-conductor.service"
+          - service:
+              name: "openstack-nova-consoleauth.service"
+          - service:
+              name: "openstack-nova-novncproxy.service"
+          - service:
+              name: "openstack-nova-scheduler.service"
+        neutron:
+          - service:
+              name: "neutron-server.service"
+          - service:
+              name: "neutron-metadata-agent.service"
+          - service:
+              name: "neutron-lbaasv2-agent.service"
+          - service:
+              name: "neutron-dhcp-agent.service"
+          - service:
+              name: "neutron-vpn-agent.service"
+          - service:
+              name: "neutron-openvswitch-agent.service"
+        keystone:
+          - service:
+              name: "openstack-keystone.service"
+        glance:
+          - service:
+              name: "openstack-glance-api.service"
+          - service:
+              name: "openstack-glance-registry.service"
+        cinder:
+          - service:
+              name: "openstack-cinder-api.service"
+          - service:
+              name: "openstack-cinder-backup.service"
+          - service:
+              name: "openstack-cinder-scheduler.service"
+          - service:
+              name: "openstack-cinder-volume.service"
+        rabbitmq:
+          - service:
+              name: "rabbitmq-server.service"
+        http:
+          - service:
+              name: "httpd.service"
+        pacemaker:
+          - service:
+              name: "pacemaker.service"
+        ovs:
+          - service:
+              name: "ovs-vswitchd.service"
+          - service:
+              name: "ovsdb-server.service"
+        memcache:
+          - service:
+              name: "memcached.service"
+        lenovo:
+          - service:
+              name: "lenovo_service_sensor.service"
+        heat:
+          - service:
+              name: "openstack-heat-api.service"
+          - service:
+              name: "openstack-heat-api-cfn.service"
+      compute:
+        ovs:
+          - service:
+              name: "ovs-vswitchd.service"
+          - service:
+              name: "ovsdb-server.service"
+        libvirt:
+          - service:
+              name: "libvirtd.service"
+        storage:
+          - service:
+              name: "storagemgmt-agent.service"
+        lenovo:
+          - service:
+              name: "lenovo-vagent.service"
+          - service:
+              name: "lenovo_service_sensor.service"
+        neutron:
+          - service:
+              name: "neutron-sriov-nic-agent.service"
+          - service:
+              name: "neutron-openvswitch-agent.service"
+        ceilometer:
+          - service:
+              name: "openstack-ceilometer-compute.service"
+        nova:
+          - service:
+              name: "openstack-nova-compute.service"
+        dns:
+          - service:
+              name: "dnsmasq.service"
+
+    vm_confirm:
+      confirm_vm_info: true
+
+    node_status:
+      compute_node_status:
+        state: up

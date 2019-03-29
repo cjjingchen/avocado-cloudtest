@@ -1,0 +1,12 @@
+{% set users_per_tenant = users_per_tenant or "10" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "10" %}
+---
+  KeystoneBasic.create_tenant_with_users:
+    -
+      args:
+        users_per_tenant: {{users_per_tenant}}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

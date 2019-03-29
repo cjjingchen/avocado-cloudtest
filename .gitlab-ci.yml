@@ -1,0 +1,25 @@
+stages:
+  - install_deps
+  - build
+
+install_deps:
+  stage: install_deps
+  only:
+    - release-v2.0
+    - develop
+    - master
+  script:
+    - sudo make requirements
+
+build:
+  stage: build
+  only:
+    - release-v2.0
+    - develop
+    - master
+  script:
+    - sudo make clean
+    - sudo make release
+    - sudo mv dist/* /builds/
+    - sudo rm -rf build/*
+    - sudo rm -rf avocado_cloudtest.egg-info

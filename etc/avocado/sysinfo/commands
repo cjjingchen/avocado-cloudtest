@@ -1,0 +1,16 @@
+top -n 1
+free -m
+df -mP
+dmesg
+uname -a
+lspci -vvnn
+ld --version
+hostname
+uptime
+dmidecode
+ifconfig -a
+brctl show
+ip link
+numactl --hardware show
+lscpu
+fdisk -l

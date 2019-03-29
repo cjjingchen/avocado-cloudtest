@@ -1,0 +1,36 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "10" %}
+---
+  CeilometerMeters.list_meters:
+    -
+      runner:
+        type: constant
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        ceilometer:
+          counter_name: "volume.size"
+          counter_type: "gauge"
+          counter_unit: "%"
+          counter_volume: 100
+          resources_per_tenant: 100
+          samples_per_resource: 100
+          timestamp_interval: 10
+          metadata_list:
+            -
+              status: "active"
+              name: "rally benchmark on"
+              deleted: "false"
+            -
+              status: "terminated"
+              name: "rally benchmark off"
+              deleted: "true"
+      args:
+        limit: 50
+        metadata_query:
+          status: "terminated"

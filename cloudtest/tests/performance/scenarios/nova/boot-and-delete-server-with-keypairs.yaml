@@ -1,0 +1,26 @@
+{% set start_cidr= start_cidr or "100.1.0.0/26" %}
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "5" %}
+{% set image_name = image_name or "^cirros.*uec$" %}
+{% set flavor_name = flavor_name or "m1.tiny" %}
+---
+  NovaKeypair.boot_and_delete_server_with_keypair:
+    -
+      args:
+        flavor:
+            name: "{{flavor_name}}"
+        image:
+            name: "{{image_name}}"
+        boot_server_kwargs: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        network:
+          start_cidr: {{start_cidr}}

@@ -1,0 +1,24 @@
+{% set users_per_tenant = users_per_tenant or "3" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "10" %}
+---
+  NeutronNetworks.create_and_list_subnets:
+    -
+      args:
+        network_create_args: {}
+        subnet_create_args: {}
+        subnet_cidr_start: "1.1.0.0/30"
+        subnets_per_network: 1
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        quotas:
+          neutron:
+            network: -1
+            subnet: -1

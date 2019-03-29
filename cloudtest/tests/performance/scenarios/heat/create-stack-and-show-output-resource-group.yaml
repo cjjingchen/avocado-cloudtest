@@ -1,0 +1,32 @@
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "5" %}
+---
+  HeatStacks.create_stack_and_show_output:
+    -
+      args:
+        template_path: "samples/tasks/scenarios/heat/templates/resource-group-with-outputs.yaml.template"
+        output_key: "val1"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+
+  HeatStacks.create_stack_and_show_output_via_API:
+    -
+      args:
+        template_path: "samples/tasks/scenarios/heat/templates/resource-group-with-outputs.yaml.template"
+        output_key: "val1"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

@@ -1,0 +1,3 @@
+if is_service_enabled horizon; then
+    register_project_for_upgrade horizon
+fi

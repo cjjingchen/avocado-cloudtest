@@ -1,0 +1,11 @@
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaHypervisors.list_hypervisors:
+    -
+      args:
+        detailed: True
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

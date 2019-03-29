@@ -1,0 +1,3 @@
+[submodule "dependencies"]
+	path = dependencies
+	url = http://10.100.4.206/cloudtest-dependencies

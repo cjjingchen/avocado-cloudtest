@@ -1,0 +1,27 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "10" %}
+---
+  MonascaMetrics.list_metrics:
+    -
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        roles:
+         - "monasca-user"
+        monasca_metrics:
+          "dimensions":
+              "region": "RegionOne"
+              "service": "identity"
+              "hostname": "fake_host"
+              "url": "http://fake_host:5000/v2.0"
+          "metrics_per_tenant": 10
+      args:
+        "region": "RegionOne"
+        "limit": 5

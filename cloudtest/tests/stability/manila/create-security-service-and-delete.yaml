@@ -1,0 +1,24 @@
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "10" %}
+---
+  ManilaShares.create_security_service_and_delete:
+    -
+      args:
+        security_service_type: "active_directory"
+        dns_ip: "fake_dns_ip"
+        server: "fake-server"
+        domain: "fake_domain"
+        user: "fake_user"
+        password: "fake_password"
+        name: "fake_name"
+        description: "fake_description"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

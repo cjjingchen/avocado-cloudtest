@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+# ``save-state``
+
+echo "*********************************************************************"
+echo "Begin $0"
+echo "*********************************************************************"
+
+set -o errexit
+
+# Clean up any resources that may be in use
+cleanup() {
+    set +o errexit
+
+    echo "*********************************************************************"
+    echo "ERROR: Abort $0"
+    echo "*********************************************************************"
+
+    # Kill ourselves to signal any calling process
+    trap 2; kill -2 $$
+}
+
+# Keep track of the grenade directory
+GRENADE_DIR=$(cd $(dirname "$0") && pwd)
+
+# Source params
+source $GRENADE_DIR/grenaderc
+
+# Import common functions
+source $GRENADE_DIR/functions
+
+# Determine what system we are running on.  This provides ``os_VENDOR``,
+# ``os_RELEASE``, ``os_UPDATE``, ``os_PACKAGE``, ``os_CODENAME``
+# and ``DISTRO``
+GetDistro
+
+
+# For debugging
+set -o xtrace
+
+
+# Save databases
+# --------------
+
+save_data $BASE_RELEASE $BASE_DEVSTACK_DIR
+
+# Save ebtables/iptables
+# ----------------------
+
+# NOTE(sileht): If nova is not installed this tools are not present
+if [ -x "$(iptable-save)" ]; then
+    sudo iptables-save >$SAVE_DIR/iptables.$BASE_RELEASE
+fi
+if [ -x "$(ebtables)" ]; then
+    sudo ebtables -t broute -L >$SAVE_DIR/ebtables-broute.$BASE_RELEASE
+    sudo ebtables -t filter -L >$SAVE_DIR/ebtables-filter.$BASE_RELEASE
+    sudo ebtables -t nat -L >$SAVE_DIR/ebtables-nat.$BASE_RELEASE
+fi
+
+# Log RabbitMQ state
+# ------------------
+if $(source $BASE_DEVSTACK_DIR/stackrc; is_service_enabled rabbit); then
+    sudo rabbitmqctl list_queues messages consumers arguments name >$SAVE_DIR/rabbitmq-queues.txt
+    sudo rabbitmqctl report >$SAVE_DIR/rabbitmq-report.txt
+fi
+
+set +o xtrace
+echo "*********************************************************************"
+echo "SUCCESS: End $0"
+echo "*********************************************************************"

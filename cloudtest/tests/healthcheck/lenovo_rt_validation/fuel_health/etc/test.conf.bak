@@ -1,0 +1,68 @@
+[identity]
+admin_horizonurl = http://10.100.3.61
+url = http://10.100.3.61/
+catalog_type = identity
+disable_ssl_certificate_validation = True
+uri = http://10.100.3.61:5000/v2.0
+strategy = keystone
+region = RegionOne
+admin_username = 123456
+admin_password = pk_3_proj
+admin_tenant_name = pk_3_proj
+admin_project = pk_3_admin
+
+[compute]
+release_version = 1-6.0
+use_vcenter = hostname
+use_kvm = True
+online_computes = 172.168.0.5 172.168.0.6
+online_controllers = 10.100.211.145
+compute_nodes = node-142,node-141
+controller_nodes = 10.100.211.145
+controller_nodes_name = controller
+auto_assign_floating_ip = 1
+kvm = True
+controller_node_ssh_user = root
+controller_node_ssh_password = r00tme
+controller_node_ssh_key_path = /root/.ssh/id_rsa
+allow_tenant_isolation = True
+allow_tenant_reuse = true
+image_name = cirros
+flavor_ref = 1
+image_ssh_user = cirros
+image_alt_ssh_user = cirros
+build_interval = 3
+build_timeout = 300
+run_ssh = false
+ssh_timeout = 300
+ssh_channel_timeout = 60
+catalog_type = compute
+create_image_enabled = true
+
+[image]
+catalog_type = image
+api_version = 1
+http_image = http://download.cirros-cloud.net/0.3.1/cirros-0.3.1-x86_64-uec.tar.gz
+
+[network]
+api_version = 2.0
+catalog_type = network
+tenant_network_cidr = 10.13.0.0/16
+tenant_network_mask_bits = 28
+tenant_networks_reachable = true
+quantum_available = false
+network_provider = neutron
+
+[volume]
+catalog_type = volume
+build_interval = 3
+build_timeout = 300
+multi_backend_enabled = false
+backend1_name = BACKEND_1
+backend2_name = BACKEND_2
+
+[object-storage]
+catalog_type = object-store
+container_sync_timeout = 120
+container_sync_interval = 5
+

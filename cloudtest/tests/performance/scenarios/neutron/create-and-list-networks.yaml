@@ -1,0 +1,43 @@
+{% set users_per_tenant = users_per_tenant or "3" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "10" %}
+{% set times = times or "100" %}
+---
+  NeutronNetworks.create_and_list_networks:
+    -
+      args:
+        network_create_args: {}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        quotas:
+          neutron:
+            network: -1
+      sla:
+        failure_rate:
+          max: 0
+    -
+      args:
+        network_create_args:
+          provider:network_type: "vxlan"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        quotas:
+          neutron:
+            network: -1
+        roles:
+          - "admin"
+      sla:
+        failure_rate:
+          max: 0

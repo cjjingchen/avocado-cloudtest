@@ -1,0 +1,27 @@
+{% set size = size or 1 %}
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "1" %}
+{% set times = times or "1" %}
+{% set image_name = image_name or "^cirros.*uec$" %}
+{% set flavor_name = flavor_name or "m1.tiny" %}
+---
+  CinderVolumes.create_nested_snapshots_and_attach_volume:
+    -
+      args:
+          size: {{size}}
+          nested_level: 5
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        servers:
+          image:
+            name: "{{image_name}}"
+          flavor:
+            name: "{{flavor_name}}"
+          servers_per_tenant: 2

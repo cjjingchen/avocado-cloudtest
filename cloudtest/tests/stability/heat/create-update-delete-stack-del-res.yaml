@@ -1,0 +1,18 @@
+{% set users_per_tenant = users_per_tenant or "3" %}
+{% set tenants = tenants or "2" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  HeatStacks.create_update_delete_stack:
+    -
+      args:
+        template_path: "samples/tasks/scenarios/heat/templates/random-strings.yaml.template"
+        updated_template_path: "samples/tasks/scenarios/heat/templates/updated-random-strings-delete.yaml.template"
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}

@@ -1,0 +1,43 @@
+{% set start_cidr= start_cidr or "10.2.0.0/24" %}
+{% set users_per_tenant = users_per_tenant or "2" %}
+{% set tenants = tenants or "3" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+{% set image_name = image_name or "^cirros.*uec$" %}
+{% set flavor_name = flavor_name or "m1.tiny" %}
+---
+  NovaServers.boot_and_delete_server:
+    -
+      args:
+        flavor:
+            name: "{{flavor_name}}"
+        image:
+            name: "{{image_name}}"
+        force_delete: false
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+
+    -
+      args:
+        flavor:
+            name: "{{flavor_name}}"
+        image:
+            name: "{{image_name}}"
+        auto_assign_nic: true
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        network:
+          start_cidr: {{start_cidr}}
+          networks_per_tenant: 2

@@ -1,0 +1,60 @@
+avocado (0.29.0) vivid; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Fri, 09 Oct 2015 09:32:33 -0300
+
+avocado (0.21.0) utopic; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Thu, 19 Mar 2015 15:48:56 -0300
+
+avocado (0.20.1) trusty; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Thu, 12 Feb 2015 11:40:36 -0200
+
+avocado (0.14.0) trusty; urgency=medium
+
+  * Add new upstream version 0.14.0.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Wed, 10 Dec 2014 18:13:44 -0200
+
+avocado (0.11.1) trusty; urgency=medium
+
+  * Add new upstream version 0.11.1.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Mon, 25 Aug 2014 10:14:34 -0300
+
+avocado (0.0.1ubuntu4) saucy; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Wed, 02 Apr 2014 13:39:36 -0300
+
+avocado (0.0.1ubuntu3) saucy; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Wed, 02 Apr 2014 13:39:07 -0300
+
+avocado (0.0.1ubuntu2) saucy; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Wed, 02 Apr 2014 13:35:43 -0300
+
+avocado (0.0.1ubuntu1) saucy; urgency=medium
+
+  * Automated (make builddeb) build.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Wed, 02 Apr 2014 13:35:31 -0300
+
+avocado (0.0.1) saucy; urgency=low
+
+  * Initial release.
+
+ -- Lucas Meneghel Rodrigues (lmr) <lookkas@gmail.com>  Wed, 02 Apr 2014 14:12:43 -0200
+

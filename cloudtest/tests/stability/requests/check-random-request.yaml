@@ -1,0 +1,19 @@
+{% set concurrency = concurrency or "5" %}
+{% set times = times or "20" %}
+---
+  HttpRequests.check_random_request:
+    -
+      args:
+        requests:
+          -
+            url: "http://www.example.com"
+            method: "GET"
+            status_code: 200
+          -
+            url: "http://www.openstack.org"
+            method: "GET"
+        status_code: 200
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}

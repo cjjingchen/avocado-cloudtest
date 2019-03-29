@@ -1,0 +1,47 @@
+{% set define_user_password = define_user_password or "123456" %}
+{% set define_user_name = define_user_name or "pk_3_admin" %}
+{% set define_user_id = define_user_id or "88ca2a07cec345809f60d9f4706dc736" %}
+{% set define_tenant_name = define_tenant_name or "pk_3_proj" %}
+{% set define_tenant_id = define_tenant_id or "0d7ff1aeb88d45f0a3ece05e8bda39c8" %}
+{% set define_flag = define_flag or true %}
+{% set image_location = image_location or "http://10.100.206.117:8080/Operator/cirros-0.3.4-x86_64-disk.img" %}
+{% set flavor_name = flavor_name or "m1.small" %}
+{% set image_1_username = image_1_username or "cirros" %}
+{% set image_1_password = image_1_password or "cubswin:)" %}
+{% set image_2_username = image_2_username or "root" %}
+{% set image_2_password = image_2_password or "root" %}
+{% set public_network_name = public_network_name or "public" %}
+{% set security_group_name = security_group_name or "any" %}
+---
+Image_Stability.create_and_list_image:
+- args:
+    image_create_infos:
+    - image_location: "{{image_location}}"
+      container_format: "bare"
+      disk_format: "qcow2"
+      flavor_name: "{{flavor_name}}"
+      username: "{{image_1_username}}"
+      password: "{{image_1_password}}"
+    image_name_prefix: "glance_test"
+    public_network_name: "{{public_network_name}}"
+    security_group:
+    - "{{security_group_name}}"
+  runner:
+    type: "serial"
+    times: 1
+    concurrency: 1
+  context:
+    users:
+      tenants: 1
+      users_per_tenant: 1
+      define_flag: {{define_flag}}
+      define_tenant_id: "{{define_tenant_id}}"
+      define_tenant_name: "{{define_tenant_name}}"
+      define_user_id: "{{define_user_id}}"
+      define_user_name: "{{define_user_name}}"
+      define_user_password: "{{define_user_password}}"
+    quotas:
+      neutron:
+        network: -1
+        subnet: -1
+        router: -1

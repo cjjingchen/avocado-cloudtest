@@ -1,0 +1,20 @@
+{% set size = size or 1 %}
+{% set users_per_tenant = users_per_tenant or "1" %}
+{% set tenants = tenants or "1" %}
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "2" %}
+---
+  CinderVolumes.create_from_volume_and_delete_volume:
+    -
+      args:
+        size: {{size}}
+      runner:
+        type: "constant"
+        times: {{times}}
+        concurrency: {{concurrency}}
+      context:
+        users:
+          tenants: {{tenants}}
+          users_per_tenant: {{users_per_tenant}}
+        volumes:
+          size: {{size}}

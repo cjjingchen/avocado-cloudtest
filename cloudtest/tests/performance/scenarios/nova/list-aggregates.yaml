@@ -1,0 +1,9 @@
+{% set concurrency = concurrency or "2" %}
+{% set times = times or "10" %}
+---
+  NovaAggregates.list_aggregates:
+    -
+      runner:
+        type: "constant"
+        concurrency: {{concurrency}}
+        times: {{times}}
